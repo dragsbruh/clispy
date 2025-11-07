@@ -4,7 +4,9 @@ let rec loop =
     let s = Readline.readline ~prompt:"clispy> " () in
     match s with
     | Some s ->
-        Lexer.lex_line s |> Lexer.display_tokens;
+        let expr, _ = Lexer.lex_line s |> Parser.parse_tokens in
+        Parser.display_expr expr;
+        print_newline ();
         Readline.add_history s;
         loop ()
     | None -> ()
