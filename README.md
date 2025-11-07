@@ -11,7 +11,7 @@ neither the language nor the runtime is usable rn, come back later!!
 
 - [ ] core language (interpreted)
   - [x] lexer
-  - [ ] parser
+  - [x] parser
   - [ ] interpreter
   - [ ] language features
   - [ ] standard library
