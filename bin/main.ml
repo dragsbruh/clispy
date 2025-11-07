@@ -4,8 +4,9 @@ let rec loop =
     let s = Readline.readline ~prompt:"clispy> " () in
     match s with
     | Some s ->
-        let expr, _ = Lexer.lex_line s |> Parser.parse_tokens in
+        let expr, rest = Lexer.lex_line s |> Parser.parse_tokens in
         Parser.display_expr expr;
+        if List.length rest > 0 then failwith "must";
         print_newline ();
         Readline.add_history s;
         loop ()

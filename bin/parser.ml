@@ -5,6 +5,7 @@ type expr =
   | StringNode of string
   | SymbolNode of string
   | ListNode of expr list
+  | CommentNode of string
 
 exception UnclosedList of int
 
@@ -20,6 +21,7 @@ let rec display_expr expr =
       List.iter display_expr xs;
       Printf.printf "]; ";
       flush stdout
+  | CommentNode _ -> ()
 
 let rec parse_tokens tokens =
   match tokens with
@@ -39,4 +41,4 @@ let rec parse_tokens tokens =
       in
       parse_list [] rest
   | Lexer.RParen :: _ -> failwith "Unbound closing paren"
-  | _ -> failwith "TODO"
+  | Lexer.Comment c :: rest -> (CommentNode c, rest)

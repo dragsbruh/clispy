@@ -7,8 +7,6 @@ type token =
   | Symbol of string
   | Comment of string
 
-exception UnclosedLiteral of int * int
-
 let escape_symbol = function
   | 'n' -> '\n'
   | 't' -> '\t'
@@ -39,13 +37,19 @@ let lex_line s =
       | '"' ->
           let rec iloop start pos acc =
             if pos >= String.length s then
-              raise (UnclosedLiteral (start - 1, pos))
+              failwith
+                (Printf.sprintf
+                   "Unclosed string literal (from position %d to %d)"
+                   (start - 1) pos)
             else
               match s.[pos] with
               | '"' -> String acc :: aux (pos + 1)
               | '\\' ->
                   if pos + 1 >= String.length s then
-                    raise (UnclosedLiteral (start - 1, pos))
+                    failwith
+                      (Printf.sprintf
+                         "Unclosed string literal (from position %d to %d)"
+                         (start - 1) pos)
                   else
                     iloop start (pos + 2)
                       (String.make 1 (escape_symbol s.[pos + 1]))
