@@ -255,9 +255,9 @@ let read_file filename =
   content
 
 let () =
+  Readline.init ~catch_break:true ~program_name:"clispy"
+    ~history_file:(Sys.getenv "HOME" ^ "/.clispy-history")
+    ();
+
   if Array.length Sys.argv > 1 then eval_code (read_file Sys.argv.(1))
-  else (
-    Readline.init ~catch_break:true ~program_name:"clispy"
-      ~history_file:(Sys.getenv "HOME" ^ "/.clispy-history")
-      ();
-    repl ())
+  else repl ()
