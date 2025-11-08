@@ -1,21 +1,19 @@
 module Env = Map.Make (String)
 
 type expr =
-  | NilNode
   | IntNode of int
   | FloatNode of float
   | StringNode of string
   | SymbolNode of string
   | ListNode of expr list
   | CommentNode of string
-  | FunctionNode of (expr Env.t * expr list -> expr) * bool
+  | FunctionNode of ((expr Env.t * expr list -> expr) * bool)
   | BoolNode of bool
 
 exception UnclosedList of int
 
 let rec display_expr expr =
   match expr with
-  | NilNode -> Printf.printf "nil'nil; "
   | IntNode i -> Printf.printf "int'%d; " i
   | FloatNode f -> Printf.printf "float'%f; " f
   | StringNode s -> Printf.printf "string'{|%s|}; " s

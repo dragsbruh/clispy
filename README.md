@@ -17,9 +17,25 @@ neither the language nor the runtime is usable rn, come back later!!
 
 available built-ins:
 
-```plaintext
-add, sub, mult, div, mod, gt, lt,
-eq, neq, ge, le, if, not, and, or
+```lisp
+add (a : int | float) (b : int | float)
+sub (a : int | float) (b : int | float)
+mult (a : int | float) (b : int | float)
+div (a : int | float) (b : int | float)
+mod (a : int | float) (b : int | float)
+gt (a : int | float) (b : int | float)
+lt (a : int | float) (b : int | float)
+eq (a : int | float) (b : int | float)
+neq (a : int | float) (b : int | float)
+ge (a : int | float) (b : int | float)
+le (a : int | float) (b : int | float)
+if (cond : bool) ( truthy : expr ) ( falsy : expr )
+not (cond : bool)
+and (cond : bool) (cond : bool)
+or (cond : bool) (cond : bool)
+int (x : float)
+float (x : int)
+fun (args : symbol list) (body : expr)
 ```
 
 with more to come

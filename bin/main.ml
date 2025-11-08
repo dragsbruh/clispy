@@ -3,7 +3,7 @@ let rec eval env ast =
   | Parser.SymbolNode s -> (
       match Parser.Env.find_opt s env with
       | Some v -> v
-      | None -> failwith "unknown symbol")
+      | None -> failwith (Printf.sprintf "unknown symbol %s" s))
   | Parser.ListNode (arg0 :: args) -> (
       match eval env arg0 with
       | Parser.FunctionNode (fn, lazy_eval) ->
@@ -11,7 +11,7 @@ let rec eval env ast =
       | _ -> failwith "not a function")
   | v -> v
 
-let num_fn (int_op : int -> int -> int) (float_op : float -> float -> float) =
+let num_fn int_op float_op =
   Parser.FunctionNode
     ( (function
       | _, [ Parser.IntNode a; Parser.IntNode b ] -> Parser.IntNode (int_op a b)
@@ -24,7 +24,7 @@ let num_fn (int_op : int -> int -> int) (float_op : float -> float -> float) =
       | _ -> failwith "expected two numeric arguments"),
       false )
 
-let cmp_fn (int_op : int -> int -> bool) (float_op : float -> float -> bool) =
+let cmp_fn int_op float_op =
   Parser.FunctionNode
     ( (function
       | _, [ Parser.IntNode a; Parser.IntNode b ] ->
@@ -83,6 +83,48 @@ let or_fn =
       | _ -> failwith "invalid or statement"),
       true )
 
+let num_conv_fn use_float_of_int =
+  Parser.FunctionNode
+    ( (function
+      | _, [ Parser.IntNode i ] when use_float_of_int ->
+          Parser.FloatNode (float_of_int i)
+      | _, [ Parser.FloatNode f ] when not use_float_of_int ->
+          Parser.IntNode (int_of_float f)
+      | _ -> failwith "invalid num conversion"),
+      false )
+
+let fun_fn =
+  Parser.FunctionNode
+    ( (function
+      | closure_env, [ args; body ] -> (
+          match (args, body) with
+          | Parser.ListNode args_names, anyexpr
+            when List.for_all
+                   (function Parser.SymbolNode _ -> true | _ -> false)
+                   args_names ->
+              Parser.FunctionNode
+                ( (fun (args_env, args_vals) ->
+                    if List.length args_names <> List.length args_vals then
+                      failwith "invalid number of arguments"
+                    else
+                      let args_tups =
+                        List.combine args_names
+                          (List.map (eval args_env) args_vals)
+                      in
+                      let combined_env =
+                        List.fold_left
+                          (fun acc (k, v) ->
+                            match k with
+                            | Parser.SymbolNode s -> Parser.Env.add s v acc
+                            | _ -> failwith "")
+                          closure_env args_tups
+                      in
+                      eval combined_env anyexpr),
+                  false )
+          | _ -> failwith "invalid function arguments")
+      | _ -> failwith "invalid function definition"),
+      true )
+
 let env =
   Parser.Env.of_list
     [
@@ -101,6 +143,9 @@ let env =
       ("not", not_fn);
       ("and", and_fn);
       ("or", or_fn);
+      ("int", num_conv_fn false);
+      ("float", num_conv_fn true);
+      ("fun", fun_fn);
     ]
 
 let eval_code line =
