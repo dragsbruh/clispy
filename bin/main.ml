@@ -124,36 +124,66 @@ let str_conv_fn =
           | _ -> failwith "invalid str conversion")),
       false )
 
+let fn_call args_env args_names args_vals closure_env anyexpr =
+  if List.length args_names <> List.length args_vals then
+    failwith "invalid number of arguments"
+  else
+    let args_tups =
+      List.combine args_names (List.map (eval args_env) args_vals)
+    in
+    let combined_env =
+      List.fold_left
+        (fun acc (k, v) ->
+          match k with
+          | Parser.SymbolNode s -> Parser.Env.add s v acc
+          | _ -> failwith "")
+        closure_env args_tups
+    in
+    eval combined_env anyexpr
+
 let fun_fn =
   Parser.FunctionNode
     ( (function
       | closure_env, [ args; body ] -> (
           match (args, body) with
-          | Parser.ListNode args_names, anyexpr
+          | Parser.ExprNode (arg0, args), anyexpr
             when List.for_all
                    (function Parser.SymbolNode _ -> true | _ -> false)
-                   args_names ->
+                   (arg0 :: args) ->
+              let args_names = arg0 :: args in
+
               Parser.FunctionNode
                 ( (fun (args_env, args_vals) ->
-                    if List.length args_names <> List.length args_vals then
-                      failwith "invalid number of arguments"
-                    else
-                      let args_tups =
-                        List.combine args_names
-                          (List.map (eval args_env) args_vals)
-                      in
-                      let combined_env =
-                        List.fold_left
-                          (fun acc (k, v) ->
-                            match k with
-                            | Parser.SymbolNode s -> Parser.Env.add s v acc
-                            | _ -> failwith "")
-                          closure_env args_tups
-                      in
-                      eval combined_env anyexpr),
+                    fn_call args_env args_names args_vals closure_env anyexpr),
                   false )
           | _ -> failwith "invalid function arguments")
       | _ -> failwith "invalid function definition"),
+      true )
+
+let rec_fn =
+  Parser.FunctionNode
+    ( (function
+      | closure_env, [ name; args; body; nest ] -> (
+          match (name, args, body) with
+          | Parser.SymbolNode name, Parser.ExprNode (arg0, args), anyexpr
+            when List.for_all
+                   (function Parser.SymbolNode _ -> true | _ -> false)
+                   (arg0 :: args) ->
+              let args_names = arg0 :: args in
+              let rec exec_fn (args_env, args_vals) =
+                fn_call args_env args_names args_vals
+                  (Parser.Env.add name
+                     (Parser.FunctionNode (exec_fn, false))
+                     closure_env)
+                  anyexpr
+              in
+              eval
+                (Parser.Env.add name
+                   (Parser.FunctionNode (exec_fn, false))
+                   closure_env)
+                nest
+          | _ -> failwith "invalid rec arguments")
+      | _ -> failwith "invalid rec definition"),
       true )
 
 let let_fn =
@@ -240,6 +270,7 @@ let env =
       ("float", num_conv_fn true);
       ("cat", str_op_fn ( ^ ));
       ("fun", fun_fn);
+      ("rec", rec_fn);
       ("let", let_fn);
       ("print", print_fn);
       ("readline", readline_fn);
@@ -266,8 +297,11 @@ let env =
 let eval_code line =
   let rec eval_tokens tokens =
     let expr, rest = Parser.parse_tokens tokens in
-    Parser.display_expr (eval env expr);
-    print_newline ();
+    let res = eval env expr in
+    if res <> Parser.NilNode then (
+      Parser.display_expr res;
+      print_newline ());
+    flush stdout;
     if List.length rest > 0 then eval_tokens rest
   in
   try Lexer.lex_line line |> eval_tokens with End_of_file -> ()

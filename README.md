@@ -1,52 +1,46 @@
 # clispy
 
 lisp-like language for a beam-like runtime
-neither the language nor the runtime is usable rn, come back later!!
+
+the runtime is not usable rn, come back later!!
 
 ## show me the code
 
 ```lisp
-; arithmetic
-(add 1 2)                 ; 3
-(sub 5 2)                 ; 3
-(mult 3 4)                ; 12
-(div 10 2)                ; 5
-(mod 10 3)                ; 1
+(rec fact (n)
+  (if (le n 1)
+    1
+    (mult n (fact (sub n 1))))
+  (print
+    (cat
+      (cat "the factorial of 10 is " (str (fact 10)))
+      "\n")))
 
-; comparisons
-(gt 5 2)                  ; true
-(lt 3 7)                  ; true
-(eq 4 4)                  ; true
-(neq 1 2)                 ; true
-(ge 5 5)                  ; true
-(le 2 3)                  ; true
+(print
+  (cat
+    (cat
+      "the number 10, relative to 5 is "
+      (let x 10
+        (if (gt x 5)
+          "big"
+          "small")))
+    "\n"))
 
-; boolean logic
-(not true)                 ; false
-(and true false)           ; false
-(or false true)            ; true
+(rec fib (n)
+  (if (le n 1)
+    n
+    (add (fib (sub n 1)) (fib (sub n 2))))
+  (fib 10))
 
-; conditionals
-(if (gt 3 2)
-    (int 1)
-    (int 0))               ; 1
-
-; conversions
-(int 3.7)                  ; 3
-(float 4)                  ; 4.0
-
-; variable bindings
-(let x (add 2 3)
-    (mult x 2))             ; 10
-
-; functions
-(let square (fun (n) (mult n n))
-    (square 5))             ; 25
-
-; nested function and let
-(let double (fun (x) (mult x 2))
-    (let y (double 10)
-        (add y 3)))         ; 23
+(rec even (n)
+  (rec odd (n)
+    (if (eq n 0)
+      false
+      (even (sub n 1)))
+    (if (eq n 0)
+      true
+      (odd (sub n 1))))
+  (even 5))
 ```
 
 available built-ins:
@@ -68,6 +62,7 @@ le (a : int | float) (b : int | float)
 if (cond : bool) ( truthy : expr ) ( falsy : expr )
 fun (args : symbol list) (body : expr)
 let (name : symbol) (value : expr) (nest : expr) ; `name` is now in env when evaluating nest
+rec (name : symbol) (args : symbol list) (body : expr) (nest : expr) ; same as `(let name (fun (...args)) ...)` but recursion is possible
 
 and (cond : bool) (cond : bool)
 not (cond : bool)
@@ -79,7 +74,7 @@ str (x : nil | bool | int | float | string)
 
 cat (a : str) (b : str)
 
-print (x : nil | bool | int | float | string)
+print (x : nil | bool | int | float | string) ; does not add newline, might be confusing to use in repl since returned value `nil` is printed
 readline (prompt : string)
 
 list ...(expr : expr) ; combines any number of expressions into one list type
@@ -120,7 +115,7 @@ dune exec clispy -- <filename>
   - [x] lexer
   - [x] parser
   - [x] interpreter
-  - [ ] language features
+  - [x] language features
   - [ ] standard library
   - [ ] improvements (cool and usable error logs, remove weird cases in lexer/parser)
 - [ ] beam-like runtime

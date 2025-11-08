@@ -27,7 +27,12 @@ let rec display_expr expr =
   | FunctionNode _ -> Printf.printf "fn; "
   | BoolNode b -> Printf.printf "bool'%b; " b
   | NilNode -> Printf.printf "nil'(); "
-  | ExprNode (_, _) -> Printf.printf "expr'expr; "
+  | ExprNode (fn, args) ->
+      Printf.printf "expr[ ";
+      display_expr fn;
+      display_expr (ListNode args);
+      Printf.printf "]; ";
+      flush stdout
 
 let rec parse_tokens tokens =
   match tokens with
