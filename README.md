@@ -102,6 +102,12 @@ epsilon
 
 with more to come
 
+## mascot
+
+clispy's mascot is clippy!
+
+![clippy would never screw you over](./images/clippy.png)
+
 ## usage
 
 ```sh
