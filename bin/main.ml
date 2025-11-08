@@ -201,6 +201,22 @@ let readline_fn =
       | _ -> failwith "invalid readline expression"),
       false )
 
+let float_op_fn op_fn =
+  Parser.FunctionNode
+    ( (function
+      | _, [ Parser.FloatNode x ] -> Parser.FloatNode (op_fn x)
+      | _, [ Parser.IntNode x ] -> Parser.FloatNode (op_fn (float_of_int x))
+      | _ -> failwith "expected one numeric argument"),
+      false )
+
+let two_float_fn op_fn =
+  Parser.FunctionNode
+    ( (function
+      | _, [ Parser.FloatNode a; Parser.FloatNode b ] ->
+          Parser.FloatNode (op_fn a b)
+      | _ -> failwith "expected two float arguments"),
+      false )
+
 let env =
   Parser.Env.of_list
     [
@@ -228,6 +244,23 @@ let env =
       ("print", print_fn);
       ("readline", readline_fn);
       ("list", list_fn);
+      ("sqrt", float_op_fn sqrt);
+      ("sin", float_op_fn sin);
+      ("cos", float_op_fn cos);
+      ("tan", float_op_fn tan);
+      ("asin", float_op_fn asin);
+      ("acos", float_op_fn acos);
+      ("atan", float_op_fn atan);
+      ("atan2", two_float_fn atan2);
+      ("sinh", float_op_fn sinh);
+      ("cosh", float_op_fn cosh);
+      ("tanh", float_op_fn tanh);
+      ("pow", two_float_fn ( ** ));
+      ("exp", float_op_fn exp);
+      ("deg", float_op_fn (fun x -> x *. 180.0 /. Float.pi));
+      ("rad", float_op_fn (fun x -> x *. Float.pi /. 180.0));
+      ("pi", Parser.FloatNode Float.pi);
+      ("epsilon", Parser.FloatNode Float.epsilon);
     ]
 
 let eval_code line =

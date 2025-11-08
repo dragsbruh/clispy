@@ -82,7 +82,27 @@ cat (a : str) (b : str)
 print (x : nil | bool | int | float | string)
 readline (prompt : string)
 
-list ...(expr: expr) ; combines any number of expressions into one list type
+list ...(expr : expr) ; combines any number of expressions into one list type
+
+sqrt (x : float)
+sin (x : float)
+cos (x : float)
+tan (x : float)
+asin (x : float)
+acos (x : float)
+atan (x : float)
+sinh (x : float)
+cosh (x : float)
+tanh (x : float)
+atan2 (x : float) (y : float)
+
+pow (x : float) (pow : float)
+exp (x : float)
+deg (x : float)
+rad (x : float)
+
+pi
+epsilon
 ```
 
 with more to come
