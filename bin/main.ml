@@ -24,18 +24,30 @@ let num_fn int_op float_op =
       | _ -> failwith "expected two numeric arguments"),
       false )
 
-let cmp_fn int_op float_op =
+let str_op_fn str_op =
   Parser.FunctionNode
     ( (function
-      | _, [ Parser.IntNode a; Parser.IntNode b ] ->
-          Parser.BoolNode (int_op a b)
-      | _, [ Parser.FloatNode a; Parser.FloatNode b ] ->
-          Parser.BoolNode (float_op a b)
-      | _, [ Parser.IntNode a; Parser.FloatNode b ] ->
-          Parser.BoolNode (float_op (float_of_int a) b)
-      | _, [ Parser.FloatNode a; Parser.IntNode b ] ->
-          Parser.BoolNode (float_op a (float_of_int b))
-      | _ -> failwith "expected two numeric arguments"),
+      | _, [ Parser.StringNode a; Parser.StringNode b ] ->
+          StringNode (str_op a b)
+      | _ -> failwith "invalid str operation"),
+      false )
+
+let cmp_fn int_op float_op str_op =
+  Parser.FunctionNode
+    ( (fun (env, args) ->
+        match (env, str_op, args) with
+        | _, _, [ Parser.IntNode a; Parser.IntNode b ] ->
+            Parser.BoolNode (int_op a b)
+        | _, _, [ Parser.FloatNode a; Parser.FloatNode b ] ->
+            Parser.BoolNode (float_op a b)
+        | _, _, [ Parser.IntNode a; Parser.FloatNode b ] ->
+            Parser.BoolNode (float_op (float_of_int a) b)
+        | _, _, [ Parser.FloatNode a; Parser.IntNode b ] ->
+            Parser.BoolNode (float_op a (float_of_int b))
+        | _, Some str_op, [ Parser.StringNode a; Parser.StringNode b ] ->
+            Parser.BoolNode (str_op a b)
+        | _, _, [ _; _ ] -> Parser.BoolNode false
+        | _ -> failwith "expected two comparable arguments"),
       false )
 
 let not_fn =
@@ -83,16 +95,33 @@ let or_fn =
       | _ -> failwith "invalid or statement"),
       true )
 
-let num_conv_fn use_float_of_int =
+let num_conv_fn to_float =
   Parser.FunctionNode
     ( (function
-      | _, [ Parser.IntNode i ] when use_float_of_int ->
+      | _, [ Parser.IntNode i ] when to_float ->
           Parser.FloatNode (float_of_int i)
-      | _, [ Parser.FloatNode f ] when use_float_of_int -> Parser.FloatNode f
-      | _, [ Parser.IntNode i ] when not use_float_of_int -> Parser.IntNode i
-      | _, [ Parser.FloatNode f ] when not use_float_of_int ->
+      | _, [ Parser.FloatNode f ] when to_float -> Parser.FloatNode f
+      | _, [ Parser.IntNode i ] when not to_float -> Parser.IntNode i
+      | _, [ Parser.FloatNode f ] when not to_float ->
           Parser.IntNode (int_of_float f)
+      | _, [ Parser.StringNode s ] when to_float ->
+          Parser.FloatNode (float_of_string s)
+      | _, [ Parser.StringNode s ] when not to_float ->
+          Parser.IntNode (int_of_string s)
       | _ -> failwith "invalid num conversion"),
+      false )
+
+let str_conv_fn =
+  Parser.FunctionNode
+    ( (fun v ->
+        Parser.StringNode
+          (match v with
+          | _, [ Parser.IntNode i ] -> string_of_int i
+          | _, [ Parser.FloatNode f ] -> string_of_float f
+          | _, [ Parser.BoolNode b ] -> string_of_bool b
+          | _, [ Parser.StringNode s ] -> s
+          | _, [ Parser.NilNode ] -> "()"
+          | _ -> failwith "invalid str conversion")),
       false )
 
 let fun_fn =
@@ -138,6 +167,38 @@ let let_fn =
       | _ -> failwith "invalid let expression"),
       true )
 
+let print_fn =
+  Parser.FunctionNode
+    ( (function
+      | _, [ arg ] ->
+          let rec print_val = function
+            | Parser.IntNode i -> print_int i
+            | Parser.FloatNode i -> print_float i
+            | Parser.StringNode i -> print_string i
+            | Parser.NilNode -> print_string "()"
+            | Parser.ListNode l ->
+                (* FIXME: this is impossible, add explicit lists *)
+                print_string "( ";
+                List.iter print_val l;
+                print_string ")"
+            | Parser.BoolNode b -> print_string (if b then "true" else "false")
+            | _ -> failwith "cannot print type"
+          in
+          print_val arg;
+          Parser.NilNode
+      | _ -> failwith "invalid print expression"),
+      false )
+
+let readline_fn =
+  Parser.FunctionNode
+    ( (function
+      | _, [ Parser.StringNode s ] -> (
+          match Readline.readline ~prompt:s () with
+          | Some s -> StringNode s
+          | None -> NilNode)
+      | _ -> failwith "invalid readline expression"),
+      false )
+
 let env =
   Parser.Env.of_list
     [
@@ -146,20 +207,24 @@ let env =
       ("mult", num_fn ( * ) ( *. ));
       ("div", num_fn ( / ) ( /. ));
       ("mod", num_fn ( mod ) mod_float);
-      ("gt", cmp_fn ( > ) ( > ));
-      ("lt", cmp_fn ( < ) ( < ));
-      ("eq", cmp_fn ( = ) ( = ));
-      ("neq", cmp_fn ( <> ) ( <> ));
-      ("ge", cmp_fn ( >= ) ( >= ));
-      ("le", cmp_fn ( <= ) ( <= ));
+      ("gt", cmp_fn ( > ) ( > ) None);
+      ("lt", cmp_fn ( < ) ( < ) None);
+      ("eq", cmp_fn ( = ) ( = ) (Some ( = )));
+      ("neq", cmp_fn ( <> ) ( <> ) (Some ( <> )));
+      ("ge", cmp_fn ( >= ) ( >= ) None);
+      ("le", cmp_fn ( <= ) ( <= ) None);
       ("if", if_fn);
       ("not", not_fn);
       ("and", and_fn);
       ("or", or_fn);
+      ("str", str_conv_fn);
       ("int", num_conv_fn false);
       ("float", num_conv_fn true);
+      ("cat", str_op_fn ( ^ ));
       ("fun", fun_fn);
       ("let", let_fn);
+      ("print", print_fn);
+      ("readline", readline_fn);
     ]
 
 let eval_code line =

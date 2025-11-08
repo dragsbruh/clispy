@@ -1,6 +1,7 @@
 module Env = Map.Make (String)
 
 type expr =
+  | NilNode
   | IntNode of int
   | FloatNode of float
   | StringNode of string
@@ -24,6 +25,7 @@ let rec display_expr expr =
       flush stdout
   | FunctionNode _ -> Printf.printf "fn; "
   | BoolNode b -> Printf.printf "bool'%b; " b
+  | NilNode -> Printf.printf "nil'(); "
 
 let rec parse_tokens tokens =
   match tokens with
@@ -41,7 +43,9 @@ let rec parse_tokens tokens =
       let rec parse_list acc tokens =
         match tokens with
         | [] -> failwith "unclosed paren"
-        | Lexer.RParen :: rest -> (ListNode (List.rev acc), rest)
+        | Lexer.RParen :: rest ->
+            ( (if List.length acc > 0 then ListNode (List.rev acc) else NilNode),
+              rest )
         | _ ->
             let expr, expr_rest = parse_tokens tokens in
             parse_list (expr :: acc) expr_rest

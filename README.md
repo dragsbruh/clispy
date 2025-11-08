@@ -57,20 +57,30 @@ sub (a : int | float) (b : int | float)
 mult (a : int | float) (b : int | float)
 div (a : int | float) (b : int | float)
 mod (a : int | float) (b : int | float)
+
+eq (a : int | float | str | nil) (b : int | float | str | nil)
+neq (a : int | float | str | nil) (b : int | float | str | nil)
 gt (a : int | float) (b : int | float)
 lt (a : int | float) (b : int | float)
-eq (a : int | float) (b : int | float)
-neq (a : int | float) (b : int | float)
 ge (a : int | float) (b : int | float)
 le (a : int | float) (b : int | float)
+
 if (cond : bool) ( truthy : expr ) ( falsy : expr )
-not (cond : bool)
-and (cond : bool) (cond : bool)
-or (cond : bool) (cond : bool)
-int (x : float)
-float (x : int)
 fun (args : symbol list) (body : expr)
 let (name : symbol) (value : expr) (nest : expr) ; `name` is now in env when evaluating nest
+
+and (cond : bool) (cond : bool)
+not (cond : bool)
+or (cond : bool) (cond : bool)
+
+int (x : float | string)
+float (x : int | string)
+str (x : nil | bool | int | float | string)
+
+cat (a : str) (b : str)
+
+print (x : nil | bool | int | float | string)
+readline (prompt : string)
 ```
 
 with more to come
