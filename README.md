@@ -81,6 +81,8 @@ cat (a : str) (b : str)
 
 print (x : nil | bool | int | float | string)
 readline (prompt : string)
+
+list ...(expr: expr) ; combines any number of expressions into one list type
 ```
 
 with more to come

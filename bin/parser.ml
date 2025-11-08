@@ -7,6 +7,7 @@ type expr =
   | StringNode of string
   | SymbolNode of string
   | ListNode of expr list
+  | ExprNode of expr * expr list
   | FunctionNode of ((expr Env.t * expr list -> expr) * bool)
   | BoolNode of bool
 
@@ -26,6 +27,7 @@ let rec display_expr expr =
   | FunctionNode _ -> Printf.printf "fn; "
   | BoolNode b -> Printf.printf "bool'%b; " b
   | NilNode -> Printf.printf "nil'(); "
+  | ExprNode (_, _) -> Printf.printf "expr'expr; "
 
 let rec parse_tokens tokens =
   match tokens with
@@ -44,7 +46,9 @@ let rec parse_tokens tokens =
         match tokens with
         | [] -> failwith "unclosed paren"
         | Lexer.RParen :: rest ->
-            ( (if List.length acc > 0 then ListNode (List.rev acc) else NilNode),
+            ( (match List.rev acc with
+              | fn :: rest -> ExprNode (fn, rest)
+              | [] -> NilNode),
               rest )
         | _ ->
             let expr, expr_rest = parse_tokens tokens in

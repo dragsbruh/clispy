@@ -4,8 +4,8 @@ let rec eval env ast =
       match Parser.Env.find_opt s env with
       | Some v -> v
       | None -> failwith (Printf.sprintf "unknown symbol %s" s))
-  | Parser.ListNode (arg0 :: args) -> (
-      match eval env arg0 with
+  | Parser.ExprNode (fn_expr, args) -> (
+      match eval env fn_expr with
       | Parser.FunctionNode (fn, lazy_eval) ->
           fn (env, List.map (fun x -> if lazy_eval then x else eval env x) args)
       | _ -> failwith "not a function")
@@ -189,6 +189,8 @@ let print_fn =
       | _ -> failwith "invalid print expression"),
       false )
 
+let list_fn = Parser.FunctionNode ((function _, args -> ListNode args), false)
+
 let readline_fn =
   Parser.FunctionNode
     ( (function
@@ -225,6 +227,7 @@ let env =
       ("let", let_fn);
       ("print", print_fn);
       ("readline", readline_fn);
+      ("list", list_fn);
     ]
 
 let eval_code line =
