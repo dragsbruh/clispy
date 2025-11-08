@@ -6,7 +6,6 @@ type expr =
   | StringNode of string
   | SymbolNode of string
   | ListNode of expr list
-  | CommentNode of string
   | FunctionNode of ((expr Env.t * expr list -> expr) * bool)
   | BoolNode of bool
 
@@ -23,13 +22,12 @@ let rec display_expr expr =
       List.iter display_expr xs;
       Printf.printf "]; ";
       flush stdout
-  | CommentNode _ -> ()
   | FunctionNode _ -> Printf.printf "fn; "
   | BoolNode b -> Printf.printf "bool'%b; " b
 
 let rec parse_tokens tokens =
   match tokens with
-  | [] -> failwith "EOF"
+  | [] -> raise End_of_file
   | Lexer.Int i :: rest -> (IntNode i, rest)
   | Lexer.Float f :: rest -> (FloatNode f, rest)
   | Lexer.String s :: rest -> (StringNode s, rest)
@@ -50,4 +48,4 @@ let rec parse_tokens tokens =
       in
       parse_list [] rest
   | Lexer.RParen :: _ -> failwith "unbound closing paren"
-  | Lexer.Comment c :: rest -> (CommentNode c, rest)
+  | Lexer.Comment _ :: rest -> parse_tokens rest

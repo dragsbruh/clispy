@@ -88,6 +88,8 @@ let num_conv_fn use_float_of_int =
     ( (function
       | _, [ Parser.IntNode i ] when use_float_of_int ->
           Parser.FloatNode (float_of_int i)
+      | _, [ Parser.FloatNode f ] when use_float_of_int -> Parser.FloatNode f
+      | _, [ Parser.IntNode i ] when not use_float_of_int -> Parser.IntNode i
       | _, [ Parser.FloatNode f ] when not use_float_of_int ->
           Parser.IntNode (int_of_float f)
       | _ -> failwith "invalid num conversion"),
@@ -125,6 +127,17 @@ let fun_fn =
       | _ -> failwith "invalid function definition"),
       true )
 
+let let_fn =
+  Parser.FunctionNode
+    ( (function
+      | env, [ name; expr; nest ] -> (
+          match name with
+          | Parser.SymbolNode s ->
+              eval (Parser.Env.add s (eval env expr) env) nest
+          | _ -> failwith "expected symbol for let binding name")
+      | _ -> failwith "invalid let expression"),
+      true )
+
 let env =
   Parser.Env.of_list
     [
@@ -146,6 +159,7 @@ let env =
       ("int", num_conv_fn false);
       ("float", num_conv_fn true);
       ("fun", fun_fn);
+      ("let", let_fn);
     ]
 
 let eval_code line =
@@ -155,7 +169,7 @@ let eval_code line =
     print_newline ();
     if List.length rest > 0 then eval_tokens rest
   in
-  Lexer.lex_line line |> eval_tokens
+  try Lexer.lex_line line |> eval_tokens with End_of_file -> ()
 
 let rec repl =
  fun () ->
