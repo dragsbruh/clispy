@@ -52,7 +52,7 @@ let lex_line s =
                          (start - 1) pos)
                   else
                     iloop start (pos + 2)
-                      (String.make 1 (escape_symbol s.[pos + 1]))
+                      (acc ^ String.make 1 (escape_symbol s.[pos + 1]))
               | c -> iloop start (pos + 1) (acc ^ String.make 1 c)
           in
           iloop (pos + 1) (pos + 1) ""
